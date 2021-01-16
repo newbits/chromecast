@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/grandcat/zeroconf"
 	"github.com/vishen/go-chromecast/application"
@@ -48,11 +47,8 @@ func (c Chromecast) GetPort() int {
 }
 
 // Discover will return a channel with any cast dns entries found.
-func Discover() (<-chan Chromecast, error) {
+func Discover(ctx context.Context) (<-chan Chromecast, error) {
 	var iface *net.Interface
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(3))
-	defer cancel()
 
 	var opts = []zeroconf.ClientOption{}
 	if iface != nil {
