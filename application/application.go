@@ -947,6 +947,8 @@ func (a *Application) startStreamingServer() error {
 	a.serverPort = listener.Addr().(*net.TCPAddr).Port
 	a.log("found available port :%d", a.serverPort)
 
+	// Reset the default serving mux so we won't define a handler for "/"
+	http.DefaultServeMux = new(http.ServeMux)
 	a.httpServer = &http.Server{}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
