@@ -1,4 +1,4 @@
-module github.com/vishen/go-chromecast
+module github.com/newbits/chromecast
 
 go 1.12
 
