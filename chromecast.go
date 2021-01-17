@@ -26,34 +26,29 @@ type Chromecast struct {
 	InfoFields map[string]string
 }
 
-// GetUUID returns a unqiue id of a cast entry.
+// GetUUID returns a unique id of a Chromecast.
 func (c Chromecast) GetUUID() string {
 	return c.UUID
 }
 
-// GetName returns the identified name of a cast entry.
+// GetName returns the identified name of a Chromecast.
 func (c Chromecast) GetName() string {
 	return c.DeviceName
 }
 
-// GetAddr returns the IPV4 of a cast entry.
+// GetAddr returns the IPV4 of a Chromecast.
 func (c Chromecast) GetAddr() string {
 	return fmt.Sprintf("%s", c.AddrV4)
 }
 
-// GetPort returns the port of a cast entry.
+// GetPort returns the port of a Chromecast.
 func (c Chromecast) GetPort() int {
 	return c.Port
 }
 
 // Discover will return a channel with any cast dns entries found.
 func Discover(ctx context.Context) (<-chan Chromecast, error) {
-	var iface *net.Interface
-
-	var opts = []zeroconf.ClientOption{}
-	if iface != nil {
-		opts = append(opts, zeroconf.SelectIfaces([]net.Interface{*iface}))
-	}
+	var opts []zeroconf.ClientOption
 
 	resolver, err := zeroconf.NewResolver(opts...)
 	if err != nil {
@@ -79,17 +74,22 @@ func Discover(ctx context.Context) (<-chan Chromecast, error) {
 				if entry == nil {
 					continue
 				}
+
 				chromecast := Chromecast{
 					Port: entry.Port,
 					Host: entry.HostName,
 				}
+
 				if len(entry.AddrIPv4) > 0 {
 					chromecast.AddrV4 = entry.AddrIPv4[0]
 				}
+
 				if len(entry.AddrIPv6) > 0 {
 					chromecast.AddrV6 = entry.AddrIPv6[0]
 				}
+
 				infoFields := make(map[string]string, len(entry.Text))
+
 				for _, value := range entry.Text {
 					if kv := strings.SplitN(value, "=", 2); len(kv) == 2 {
 						key := kv[0]
@@ -107,27 +107,26 @@ func Discover(ctx context.Context) (<-chan Chromecast, error) {
 						}
 					}
 				}
+
 				chromecast.InfoFields = infoFields
 				castDNSEntriesChan <- chromecast
 			}
 		}
 	}()
+
 	return castDNSEntriesChan, nil
 }
 
 func (c Chromecast) Play(file string) error {
 	app, err := c.makeApplication()
+
 	if err != nil {
-		fmt.Printf("unable to get cast application: %v\n", err)
+		fmt.Printf("Unable to get cast application: %v\n", err)
 		return nil
 	}
 
-	contentType := ""
-	transcode := false
-	detach := false
-
-	if err := app.Load(file, contentType, transcode, detach, false); err != nil {
-		fmt.Printf("unable to load media: %v\n", err)
+	if err := app.Load(file, "", false, false, false); err != nil {
+		fmt.Printf("Unable to load media: %v\n", err)
 		return nil
 	}
 
@@ -141,8 +140,10 @@ func (c Chromecast) makeApplication() (*application.Application, error) {
 	}
 
 	app := application.NewApplication(applicationOptions...)
+
 	if err := app.Start(c.GetAddr(), c.GetPort()); err != nil {
 		return nil, err
 	}
+
 	return app, nil
 }
